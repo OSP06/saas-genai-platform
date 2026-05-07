@@ -63,6 +63,7 @@ export interface SSEEvent {
   role?: string
   mode?: string
   citations?: Citation[]
+  sources?: SourceSnippet[]
   metadata?: {
     model?: string
     latency_ms?: number
@@ -162,10 +163,11 @@ export interface AgentCancelResponse {
 
 export interface AgentLogEvent {
   type: string
-  timestamp: string
-  level: 'info' | 'debug' | 'warn' | 'error'
-  message: string
+  timestamp?: string
+  level?: 'info' | 'debug' | 'warn' | 'error'
+  message?: string
   stepId?: string
+  done?: boolean
 }
 
 // ── Analytics ─────────────────────────────────────────────────────────────────

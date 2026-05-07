@@ -12,8 +12,8 @@ class ApiConfiguration(BaseModel):
 
 
 class ModelConfiguration(BaseModel):
-    ragQueryModel: str = "claude-sonnet-4-6"
-    agentExecutionModel: str = "claude-sonnet-4-6"
+    ragQueryModel: str = "gpt-4o"
+    agentExecutionModel: str = "gpt-4o"
     embeddingModel: str = "all-MiniLM-L6-v2"
 
 

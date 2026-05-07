@@ -23,9 +23,9 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = 20
     DB_POOL_TIMEOUT: int = 30
 
-    # Anthropic
-    ANTHROPIC_API_KEY: str = Field(..., description="Anthropic API key")
-    ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
+    # OpenAI
+    OPENAI_API_KEY: str = Field(..., description="OpenAI API key")
+    OPENAI_MODEL: str = "gpt-4o"
     MAX_TOKENS: int = 4096
 
     # Ollama (fallback)
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.1:8b"
 
     # Embeddings
-    EMBEDDING_BACKEND: str = "sentence_transformers"  # "sentence_transformers" | "anthropic"
+    EMBEDDING_BACKEND: str = "sentence_transformers"  # "sentence_transformers" | "anthropic" (voyage-3)
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
     EMBEDDING_DIMENSIONS: int = 384  # all-MiniLM-L6-v2 produces 384 dims; change if switching models
 
@@ -59,8 +59,8 @@ class Settings(BaseSettings):
     AGENT_MAX_STEPS: int = 10
     AGENT_STEP_TIMEOUT: int = 60
 
-    # Analytics / Pricing
-    COST_PER_1K_INPUT_TOKENS: float = 0.003
+    # Analytics / Pricing (gpt-4o rates)
+    COST_PER_1K_INPUT_TOKENS: float = 0.005
     COST_PER_1K_OUTPUT_TOKENS: float = 0.015
 
     # Security

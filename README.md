@@ -20,11 +20,11 @@ Kortex is a full-stack GenAI SaaS platform built for teams that need more than a
 |---|---|
 | **RAG Knowledge Base** | Upload documents (PDF, DOCX, TXT, MD), build a searchable vector index, query it with natural language — answers come back with citations and source snippets |
 | **Multi-Step AI Agents** | Describe a task in plain language; the agent plans steps, calls tools (web search, document lookup, text analysis), and synthesizes a final answer |
-| **Smart Chat Router** | One chat interface, four modes: Auto lets Claude classify the intent and route to the right handler; RAG, Agent, and LLM modes are selectable manually |
+| **Smart Chat Router** | One chat interface, four modes: Auto uses the LLM to classify intent and route to the right handler; RAG, Agent, and LLM modes are selectable manually |
 | **Real-Time Streaming** | Every response streams token by token with observable status signals — no blank screens, no waiting |
 | **Analytics Dashboard** | Token usage, cost by module (RAG vs. chat vs. agent), latency percentiles (p50/p95/p99), and 30-day trends — all queryable via API |
 | **API Key Management** | Create, preview, and revoke scoped API keys from the Settings UI |
-| **Claude + Ollama** | Claude is the primary model; Ollama is a configurable fallback — every response reports which model was used |
+| **OpenAI + Ollama** | OpenAI is the primary model; Ollama is a configurable fallback — every response reports which model was used |
 
 ---
 
@@ -83,11 +83,11 @@ API configuration, model selection, notification preferences, and API key manage
 
 The backend is a **FastAPI** application that is fully async, API-first, and designed around three AI primitives:
 
-- **RAG Service** — ingestion pipeline (chunk → embed → store in pgvector) and query pipeline (embed → cosine similarity search → grounded Claude answer)
+- **RAG Service** — ingestion pipeline (chunk → embed → store in pgvector) and query pipeline (embed → cosine similarity search → grounded LLM answer)
 - **Agent Service** — task lifecycle manager with a planning LLM call, per-step tool execution, live SSE log queues, and synthesis
 - **Chat Service** — SSE streaming orchestrator that routes to the right handler and always emits a `done` event
 
-Supporting layers: `LLMService` (Claude + retry + Ollama fallback), `EmbeddingService` (SentenceTransformers, 384 dimensions), `AnalyticsService` (per-request token and latency tracking), and `APIKeyMiddleware` (optional SHA-256 key validation).
+Supporting layers: `LLMService` (OpenAI + retry + Ollama fallback), `EmbeddingService` (SentenceTransformers, 384 dimensions), `AnalyticsService` (per-request token and latency tracking), and `APIKeyMiddleware` (optional SHA-256 key validation).
 
 Detailed backend documentation: [`backend/README.md`](backend/README.md)
 
@@ -221,7 +221,7 @@ Keys are created from the Settings page. When disabled (default), no header is n
 - Python 3.11+
 - Node.js 18+ and pnpm
 - PostgreSQL 15+ with pgvector extension
-- Anthropic API key
+- OpenAI API key
 
 ### 1. Start the backend
 
@@ -234,7 +234,7 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env — set DATABASE_URL and ANTHROPIC_API_KEY at minimum
+# Edit .env — set DATABASE_URL and OPENAI_API_KEY at minimum
 
 # Run migrations
 psql $DATABASE_URL -f migrations/001_initial.sql
@@ -261,7 +261,7 @@ Frontend runs at `http://localhost:3000` and connects to the backend at `http://
 
 ```dotenv
 DATABASE_URL=postgresql+asyncpg://kortex:kortex@localhost:5432/kortex
-ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
 DEBUG=True
 ALLOWED_ORIGINS=http://localhost:3000
 ```
@@ -382,7 +382,7 @@ Enter a multi-step task — for example:
 > *"Find the latest developments in pgvector and summarize the top 3 use cases"*
 
 Watch the execution timeline build live:
-- **Planning** — Claude generates a step plan
+- **Planning** — LLM generates a step plan
 - **Step 1 of N** — tool call fires (web search or document lookup)
 - **✓ Step N completed** — output preview appears
 - **Synthesizing final answer…**

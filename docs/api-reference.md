@@ -102,7 +102,7 @@ data: {"type":"status","message":"Thinking…"}\n\n
 data: {"type":"status","message":"Searching knowledge base…"}\n\n
 data: {"type":"delta","delta":"The refund ","content":"The refund "}\n\n
 data: {"type":"delta","delta":"policy states","content":"The refund policy states"}\n\n
-data: {"type":"done","role":"assistant","content":"The refund policy states…","mode":"rag","citations":[…],"metadata":{"model":"claude-sonnet-4-6","latency_ms":1234,"tokens":87,"fallback":false}}\n\n
+data: {"type":"done","role":"assistant","content":"The refund policy states…","mode":"rag","citations":[…],"metadata":{"model":"gpt-4o","latency_ms":1234,"tokens":87,"fallback":false}}\n\n
 ```
 
 **SSE event types:**
@@ -118,7 +118,7 @@ The `done` event is **always emitted**. The frontend can rely on this to stop th
 **done.metadata:**
 ```json
 {
-  "model": "claude-sonnet-4-6",
+  "model": "gpt-4o",
   "latency_ms": 1234,
   "tokens": 87,
   "fallback": false
@@ -179,7 +179,7 @@ Paginated message history for a conversation.
       "content": "The refund policy states…",
       "mode": "rag",
       "citations": [{"documentName":"policy.pdf","relevanceScore":0.87,"content":"…","page":3}],
-      "metadata": {"model":"claude-sonnet-4-6","latency_ms":1234},
+      "metadata": {"model":"gpt-4o","latency_ms":1234},
       "timestamp": "2026-05-01T12:00:02Z"
     }
   ],
@@ -539,8 +539,8 @@ Get current settings. API key values are masked (first 4 + `...` + last 4 chars)
     "webhookUrl": null
   },
   "modelConfiguration": {
-    "ragQueryModel": "claude-sonnet-4-6",
-    "agentExecutionModel": "claude-sonnet-4-6",
+    "ragQueryModel": "gpt-4o",
+    "agentExecutionModel": "gpt-4o",
     "embeddingModel": "all-MiniLM-L6-v2"
   },
   "notifications": {

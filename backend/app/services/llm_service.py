@@ -4,7 +4,8 @@ import random
 from dataclasses import dataclass
 from typing import AsyncIterator
 
-import anthropic
+import openai
+from openai import AsyncOpenAI
 import httpx
 import structlog
 
@@ -33,7 +34,7 @@ class LLMTokenUsage:
 
 class LLMService:
     def __init__(self):
-        self._anthropic = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+        self._openai = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         self._ollama_base = settings.OLLAMA_BASE_URL
 
     async def complete(
@@ -45,21 +46,21 @@ class LLMService:
         temperature: float = 0.7,
     ) -> tuple[str, LLMTokenUsage]:
         """Non-streaming completion. Returns (content_text, usage). Falls back to Ollama on error."""
-        target_model = model or settings.ANTHROPIC_MODEL
+        target_model = model or settings.OPENAI_MODEL
+        full_messages = [{"role": "system", "content": system}] + messages
         last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES):
             try:
-                response = await self._anthropic.messages.create(
+                response = await self._openai.chat.completions.create(
                     model=target_model,
                     max_tokens=max_tokens or settings.MAX_TOKENS,
-                    system=system,
-                    messages=messages,
+                    messages=full_messages,
                     temperature=temperature,
                 )
-                content = response.content[0].text if response.content else ""
+                content = response.choices[0].message.content or ""
                 usage = LLMTokenUsage(
-                    input_tokens=response.usage.input_tokens,
-                    output_tokens=response.usage.output_tokens,
+                    input_tokens=response.usage.prompt_tokens,
+                    output_tokens=response.usage.completion_tokens,
                     model=response.model,
                 )
                 logger.info(
@@ -69,7 +70,7 @@ class LLMService:
                     output_tokens=usage.output_tokens,
                 )
                 return content, usage
-            except anthropic.APIStatusError as e:
+            except openai.APIStatusError as e:
                 if e.status_code in _RETRYABLE_STATUS_CODES and attempt < _MAX_RETRIES - 1:
                     logger.warning("llm_retry", attempt=attempt + 1, status=e.status_code)
                     await _backoff(attempt)
@@ -77,13 +78,13 @@ class LLMService:
                     continue
                 last_exc = e
                 break
-            except anthropic.APIError as e:
+            except openai.APIError as e:
                 last_exc = e
                 break
 
         # All retries exhausted — fall back to Ollama or raise
         if settings.OLLAMA_ENABLED:
-            logger.warning("anthropic_fallback_ollama", error=str(last_exc))
+            logger.warning("openai_fallback_ollama", error=str(last_exc))
             return await self._ollama_complete(
                 settings.OLLAMA_MODEL, messages, system, stream=False
             )
@@ -100,27 +101,33 @@ class LLMService:
         """
         Streaming completion. Yields (text_chunk, None) for each delta.
         Final yield is ("", LLMTokenUsage) with full token counts.
-        Falls back to Ollama on Anthropic error.
+        Falls back to Ollama on OpenAI error.
         """
-        target_model = model or settings.ANTHROPIC_MODEL
+        target_model = model or settings.OPENAI_MODEL
+        full_messages = [{"role": "system", "content": system}] + messages
         last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES):
             try:
-                async with self._anthropic.messages.stream(
+                stream = await self._openai.chat.completions.create(
                     model=target_model,
                     max_tokens=max_tokens or settings.MAX_TOKENS,
-                    system=system,
-                    messages=messages,
+                    messages=full_messages,
                     temperature=temperature,
-                ) as stream:
-                    async for text in stream.text_stream:
-                        yield text, None
-                    final_msg = await stream.get_final_message()
-                    usage = LLMTokenUsage(
-                        input_tokens=final_msg.usage.input_tokens,
-                        output_tokens=final_msg.usage.output_tokens,
-                        model=final_msg.model,
-                    )
+                    stream=True,
+                    stream_options={"include_usage": True},
+                )
+                usage: LLMTokenUsage | None = None
+                async for chunk in stream:
+                    delta = chunk.choices[0].delta.content if chunk.choices else None
+                    if delta:
+                        yield delta, None
+                    if chunk.usage:
+                        usage = LLMTokenUsage(
+                            input_tokens=chunk.usage.prompt_tokens,
+                            output_tokens=chunk.usage.completion_tokens,
+                            model=chunk.model,
+                        )
+                if usage:
                     logger.info(
                         "llm_stream_complete",
                         model=usage.model,
@@ -129,7 +136,7 @@ class LLMService:
                     )
                     yield "", usage
                 return  # success
-            except anthropic.APIStatusError as e:
+            except openai.APIStatusError as e:
                 if e.status_code in _RETRYABLE_STATUS_CODES and attempt < _MAX_RETRIES - 1:
                     logger.warning("llm_stream_retry", attempt=attempt + 1, status=e.status_code)
                     await _backoff(attempt)
@@ -137,13 +144,13 @@ class LLMService:
                     continue
                 last_exc = e
                 break
-            except anthropic.APIError as e:
+            except openai.APIError as e:
                 last_exc = e
                 break
 
         # All retries exhausted
         if settings.OLLAMA_ENABLED:
-            logger.warning("anthropic_stream_fallback_ollama", error=str(last_exc))
+            logger.warning("openai_stream_fallback_ollama", error=str(last_exc))
             async for item in self._ollama_stream(settings.OLLAMA_MODEL, messages, system):
                 yield item
             return

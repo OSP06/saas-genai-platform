@@ -8,7 +8,7 @@ Embedding and LLM calls are mocked to avoid hitting external services.
 import os
 
 # Must be set before any app import that calls get_settings()
-os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test-key")
+os.environ.setdefault("OPENAI_API_KEY", "sk-test-key")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-minimum-32-characters-long")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
@@ -69,7 +69,7 @@ class MockEmbeddingBackend:
 
 
 MOCK_LLM_RESPONSE = "This is a mock LLM response for testing."
-MOCK_USAGE = LLMTokenUsage(input_tokens=10, output_tokens=20, model="claude-sonnet-4-6")
+MOCK_USAGE = LLMTokenUsage(input_tokens=10, output_tokens=20, model="gpt-4o")
 
 
 class MockLLMService:

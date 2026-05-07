@@ -33,7 +33,7 @@ pip install -r requirements.txt
 cp .env.example .env
 # Minimum required:
 # DATABASE_URL=postgresql+asyncpg://kortex:kortex@localhost:5432/kortex
-# ANTHROPIC_API_KEY=sk-ant-...
+# OPENAI_API_KEY=sk-...
 
 # Start PostgreSQL with pgvector
 docker run -d --name kortex-db \
@@ -75,7 +75,7 @@ From the **repo root**:
 ```bash
 # Configure backend
 cp .env.example backend/.env
-# Edit backend/.env — set ANTHROPIC_API_KEY at minimum
+# Edit backend/.env — set OPENAI_API_KEY at minimum
 
 # Start database + backend
 docker compose up --build
@@ -110,7 +110,7 @@ Create a production `.env` file (not committed):
 ```bash
 # Required
 DATABASE_URL=postgresql+asyncpg://user:pass@your-db-host:5432/kortex
-ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
 
 # Production security
 SECRET_KEY=<random-32+-char-string>

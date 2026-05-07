@@ -176,7 +176,7 @@ done                                    ← always last, always emitted
 
 ```typescript
 interface DoneMetadata {
-  model: string       // "claude-sonnet-4-6"
+  model: string       // "gpt-4o"
   latency_ms: number  // total response time in ms
   tokens: number      // output tokens
   fallback: boolean   // true if Ollama was used instead of Claude

@@ -39,8 +39,8 @@ DEFAULT_SETTINGS = {
         "webhookUrl": None,
     },
     "model_config": {
-        "ragQueryModel": "claude-sonnet-4-6",
-        "agentExecutionModel": "claude-sonnet-4-6",
+        "ragQueryModel": "gpt-4o",
+        "agentExecutionModel": "gpt-4o",
         "embeddingModel": "all-MiniLM-L6-v2",
     },
     "notifications": {

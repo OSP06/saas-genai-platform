@@ -73,7 +73,7 @@ class AnthropicEmbeddingBackend:
         self._target_dim = target_dim
 
     async def async_load(self) -> None:
-        logger.info("anthropic_embedding_backend_ready")
+        logger.info("voyage_embedding_backend_ready")
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         try:
@@ -101,7 +101,7 @@ def get_embedding_service() -> EmbeddingBackend:
     backend = settings.EMBEDDING_BACKEND
     if backend == "anthropic":
         return AnthropicEmbeddingBackend(
-            api_key=settings.ANTHROPIC_API_KEY,
+            api_key=settings.OPENAI_API_KEY,
             target_dim=settings.EMBEDDING_DIMENSIONS,
         )
     return SentenceTransformerBackend(

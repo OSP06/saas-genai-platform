@@ -22,7 +22,7 @@ Starts Postgres, the FastAPI backend, and serves everything from one command.
 ```bash
 # 1. Copy and fill in the backend env file
 cp backend/.env.example backend/.env
-# Open backend/.env and set ANTHROPIC_API_KEY
+# Open backend/.env and set OPENAI_API_KEY=sk-...
 
 # 2. Start
 cd backend
@@ -55,9 +55,9 @@ python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# Copy env and set your Anthropic API key
+# Copy env and set your OpenAI API key
 cp .env.example .env
-# Edit .env — set ANTHROPIC_API_KEY at minimum
+# Edit .env — set OPENAI_API_KEY at minimum
 
 # Run the API server
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -95,7 +95,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```env
 DATABASE_URL=postgresql+asyncpg://kortex:kortex@localhost:5432/kortex
-ANTHROPIC_API_KEY=sk-ant-your-key-here
+OPENAI_API_KEY=sk-your-openai-key-here
 SECRET_KEY=any-random-32-char-string
 ```
 

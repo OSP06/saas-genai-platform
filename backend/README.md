@@ -1,6 +1,6 @@
 # Kortex Backend
 
-Fully async FastAPI backend powering the Kortex GenAI SaaS platform. Implements RAG, multi-step autonomous agents, smart LLM routing, and real-time SSE streaming. Connects to PostgreSQL + pgvector for vector search and Anthropic Claude as the primary LLM.
+Fully async FastAPI backend powering the Kortex GenAI SaaS platform. Implements RAG, multi-step autonomous agents, smart LLM routing, and real-time SSE streaming. Connects to PostgreSQL + pgvector for vector search and OpenAI as the primary LLM.
 
 ---
 
@@ -30,9 +30,9 @@ HTTP Request
          ┌──────────────────┼──────────────────┐
          ▼                  ▼                  ▼
   ┌─────────────┐  ┌──────────────┐  ┌──────────────┐
-  │ PostgreSQL  │  │  Anthropic   │  │ Local / S3   │
-  │ + pgvector  │  │  Claude API  │  │  Storage     │
-  │  VECTOR(384)│  │  + Ollama    │  │              │
+  │ PostgreSQL  │  │  OpenAI API  │  │ Local / S3   │
+  │ + pgvector  │  │  + Ollama    │  │  Storage     │
+  │  VECTOR(384)│  │  fallback    │  │              │
   └─────────────┘  └──────────────┘  └──────────────┘
 ```
 
@@ -79,7 +79,7 @@ backend/
 │   │   ├── chat_service.py      ← SSE orchestrator + routing
 │   │   ├── rag_service.py       ← Ingestion + similarity search
 │   │   ├── agent_service.py     ← Planning + step execution + SSE queues
-│   │   ├── llm_service.py       ← Claude + retry + Ollama fallback
+│   │   ├── llm_service.py       ← OpenAI + retry + Ollama fallback
 │   │   ├── router_service.py    ← Auto-classify message to rag/agent/llm
 │   │   ├── embedding_service.py ← SentenceTransformers / Voyage AI
 │   │   ├── storage_service.py   ← Local filesystem / S3
@@ -118,7 +118,7 @@ backend/
 
 - Python 3.11+
 - PostgreSQL 15+ with pgvector extension
-- Anthropic API key
+- OpenAI API key
 
 ### 1. Environment
 
@@ -129,7 +129,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# Edit .env — set DATABASE_URL and ANTHROPIC_API_KEY at minimum
+# Edit .env — set DATABASE_URL and OPENAI_API_KEY at minimum
 ```
 
 ### 2. Database
@@ -181,18 +181,18 @@ docker compose --profile ollama up --build
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | asyncpg DSN: `postgresql+asyncpg://user:pass@host/db` |
-| `ANTHROPIC_API_KEY` | Anthropic API key (`sk-ant-…`) |
+| `OPENAI_API_KEY` | OpenAI API key (`sk-…`) |
 
 ### Optional (with defaults)
 
 | Variable | Default | Description |
 |---|---|---|
-| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Claude model ID |
+| `OPENAI_MODEL` | `gpt-4o` | OpenAI model ID |
 | `MAX_TOKENS` | `4096` | Max tokens per LLM completion |
 | `OLLAMA_ENABLED` | `false` | Enable Ollama as LLM fallback |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Ollama model name |
-| `EMBEDDING_BACKEND` | `sentence_transformers` | `sentence_transformers` or `anthropic` |
+| `EMBEDDING_BACKEND` | `sentence_transformers` | `sentence_transformers` or `anthropic` (Voyage) |
 | `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Sentence transformer model |
 | `EMBEDDING_DIMENSIONS` | `384` | Vector size — must match DB VECTOR column |
 | `CHUNK_SIZE` | `1000` | Characters per document chunk |
@@ -207,7 +207,7 @@ docker compose --profile ollama up --build
 | `ALLOWED_ORIGINS` | `["http://localhost:3000"]` | CORS origins (JSON array or CSV) |
 | `API_KEY_REQUIRED` | `false` | Enforce `X-API-Key` on all `/api/*` routes |
 | `SECRET_KEY` | `""` | Reserved for future JWT signing |
-| `COST_PER_1K_INPUT_TOKENS` | `0.003` | USD cost per 1K input tokens |
+| `COST_PER_1K_INPUT_TOKENS` | `0.005` | USD cost per 1K input tokens (gpt-4o rate) |
 | `COST_PER_1K_OUTPUT_TOKENS` | `0.015` | USD cost per 1K output tokens |
 | `DEBUG` | `false` | Enable debug logging + stack traces in responses |
 | `SERPAPI_KEY` | `""` | SerpAPI key for agent web search tool |
@@ -344,7 +344,7 @@ data: {"type":"done","role":"assistant","content":"…","mode":"llm","citations"
 
 ## LLM Service
 
-- Primary: Anthropic Claude (configurable model via `ANTHROPIC_MODEL`)
+- Primary: OpenAI (configurable model via `OPENAI_MODEL`, default `gpt-4o`)
 - Retry: exponential backoff × 3 on HTTP 429, 502, 503, 529
 - Fallback: Ollama (any local model) when `OLLAMA_ENABLED=true` and retries exhausted
 - Token usage: `LLMTokenUsage(input_tokens, output_tokens, model, fallback)` returned from every call

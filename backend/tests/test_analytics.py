@@ -61,7 +61,7 @@ class TestAnalyticsService:
             request_id="req-abc",
             endpoint="/api/chat/send",
             module="chat",
-            model_used="claude-sonnet-4-6",
+            model_used="gpt-4o",
             tokens_input=100,
             tokens_output=200,
             latency_ms=1200,
